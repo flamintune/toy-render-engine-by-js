@@ -1,4 +1,4 @@
-import { Node, TextNode, ElementNode, ElementData, NodeType } from './dom'
+import { Node, TextNode, ElementNode, ElementData, CommentNode } from './dom'
 function assert(condition: any, msg?: string): asserts condition {
   if (!condition) {
     throw new Error(msg)
@@ -7,7 +7,7 @@ function assert(condition: any, msg?: string): asserts condition {
 
 export class Parser {
   pos: number
-  input:string
+  input: string
 
   constructor(input: string) {
     this.pos = 0
@@ -36,9 +36,20 @@ export class Parser {
   // get a sequence char serial
   consumeWhile(test: (c: string) => boolean): string {
     let result = ''
+    let lastCharWasWhitespace = false;
     while (this.pos < this.input.length && test(String.fromCodePoint(this.input.codePointAt(this.pos)!))) {
       let curChar = this.consumeChar()
-      result += curChar
+      let isWhitespace = (curChar === ' ' || curChar === '\n' || curChar === '\t');
+  
+      if (isWhitespace) {
+        if (!lastCharWasWhitespace) {
+          result += ' ';  // Add a space for the first whitespace character
+        }
+        lastCharWasWhitespace = true;  // Remember that we saw a whitespace character
+      } else {
+        result += curChar;
+        lastCharWasWhitespace = false;  // Reset the flag when we see a non-whitespace character
+      }
     }
     return result
   }
@@ -55,6 +66,7 @@ export class Parser {
 
   parseNode(): Node {
     let curChar = String.fromCodePoint(this.input.codePointAt(this.pos)!)
+    if (this.startsWith('<!--')) return this.parseComment()
     if (curChar === '<') {
       return this.parseElement()
     } else {
@@ -62,8 +74,31 @@ export class Parser {
     }
   }
 
+  parseComment(): Node {
+    // Consume the opening '<!--'
+    this.consumeChar()
+    this.consumeChar()
+    this.consumeChar()
+    this.consumeChar()
+
+    // Consume comment content
+    let commentContent = this.consumeWhile(c => !this.startsWith('-->'))
+    commentContent = commentContent.trim();
+    // Consume the closing '-->'
+    this.consumeChar()
+    this.consumeChar()
+    this.consumeChar()
+
+    // Here you can decide what to do with the comment.
+    // If you want to include it in your DOM, you can return a new Node.
+    // If you want to ignore it, you can return null or a placeholder Node.
+    // For this example, let's create a new Node for the comment:
+    return new Node([], new CommentNode(commentContent))
+  }
+
   parseText(): Node {
     let text = this.consumeWhile(c => c !== '<')
+    text = text.trim()
     return new Node([], new TextNode(text))
   }
 
@@ -141,7 +176,6 @@ export class Parser {
     }
     return nodes
   }
-
 }
 export function parse(source: string): Node {
   let nodes: Node[]
