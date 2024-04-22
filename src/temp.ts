@@ -1,8 +1,7 @@
-import { parse } from "./parse";
-import { prettyPrint } from "./printDom";
+import { parseDom } from "./parse";
 
 
-let node = parse(`<body>
+let node = parseDom(`<body>
                     Hello, world!
                     <div class='myClass'>Nested
                         <br></br> 
@@ -13,6 +12,4 @@ let node = parse(`<body>
                         hello<!-- 2321341 -->world 
                     </div>
                     </body>`)
-prettyPrint(node)
 
-console.log(node.children)

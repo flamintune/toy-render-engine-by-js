@@ -5,7 +5,7 @@ function assert(condition: any, msg?: string): asserts condition {
   }
 }
 
-export class Parser {
+export class DomParser {
   pos: number
   input: string
 
@@ -177,13 +177,22 @@ export class Parser {
     return nodes
   }
 }
-export function parse(source: string): Node {
+
+export class CSSParser{
+
+}
+
+export function parseDom(source: string): Node | undefined {
   let nodes: Node[]
-  let parser = new Parser(source)
+  let parser = new DomParser(source)
   nodes = parser.parseNodes()
   if (nodes.length === 1) {
     return nodes[0]
   } else {
-    return new Node(nodes, new ElementNode(new ElementData('html', new Map<string, string>())))
+    return undefined
   }
+}
+
+export function parseCSS(source:string){
+
 }
